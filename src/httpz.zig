@@ -662,6 +662,7 @@ test "httpz: CORS" {
 test "ContentType: forX" {
     inline for (@typeInfo(ContentType).Enum.fields) |field| {
         if (comptime std.mem.eql(u8, "BINARY", field.name)) continue;
+        if (comptime std.mem.eql(u8, "EVENTS", field.name)) continue;
         try t.expectEqual(@field(ContentType, field.name), ContentType.forExtension(field.name));
         try t.expectEqual(@field(ContentType, field.name), ContentType.forExtension("." ++ field.name));
         try t.expectEqual(@field(ContentType, field.name), ContentType.forFile("some_file." ++ field.name));
