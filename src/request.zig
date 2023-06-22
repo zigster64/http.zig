@@ -240,6 +240,7 @@ pub const Request = struct {
 
     pub fn json(self: *Self, comptime T: type) !?T {
         const b = try self.body() orelse return null;
+        std.debug.print("attempt to parse {s}\n", .{b});
         return try std.json.parseFromSliceLeaky(T, self.arena, b, .{});
     }
 
