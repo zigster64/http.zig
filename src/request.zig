@@ -104,6 +104,7 @@ pub const Request = struct {
 		self.static = try allocator.alloc(u8, config.buffer_size orelse 65_8536);
 		self.headers = try KeyValue.init(allocator, config.max_header_count orelse 32);
 		self.params = try Params.init(allocator, config.max_param_count orelse 10);
+        self.header_overread = 0;
 		// reset() will be called before the request is used
 	}
 
@@ -128,6 +129,7 @@ pub const Request = struct {
 
 	pub fn reset(self: *Self) void {
 		self.bd_read = false;
+        self.header_overread = 0;
 		self.bd = null;
 
 		self.qs_read = false;
@@ -501,6 +503,13 @@ pub const Request = struct {
 		if (self.header("content-length")) |value| {
 			var buffer = self.static;
 			var length = atoi(value) orelse return error.InvalidContentLength;
+
+            if (self.header_overread > length) {
+                // looks like the client lied about the content length
+                // if we dont catch this here, then get integer overflow below
+                std.log.debug("Aborting Suspicious Request: content-length = {s}:{} and header_overread = {}", .{value, length, self.header_overread});
+                return error.InvalidContentLength;
+            }
 
 			// some (or all) of the body might have already been read into static
 			// when we were loading data as part of reading the header.
