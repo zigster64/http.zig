@@ -55,15 +55,18 @@ pub fn Pool(comptime E: type, comptime S: type) type {
             const available = self.available;
             if (available == 0) {
                 self.mutex.unlock();
-                if (!self.grow_pool) {
-                    return Error.PoolFull;
+                if (self.grow_pool) {
+                    const e = try self.initFn(self.initState);
+                    std.log.debug("Creating new resReq {}", .{e});
+                    return .{ e, false };
                 }
-                const e = try self.initFn(self.initState);
-                return .{ e, false };
+                    std.log.debug("Reject because pool is full", .{});
+                return Error.PoolFull;
             }
             defer self.mutex.unlock();
             const new_available = available - 1;
             self.available = new_available;
+            std.log.debug("Re-use item {} -> {}", .{new_available, items[new_available]});
             return .{ items[new_available], true };
         }
 
