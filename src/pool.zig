@@ -60,13 +60,13 @@ pub fn Pool(comptime E: type, comptime S: type) type {
                     std.log.debug("Creating new resReq {}", .{e});
                     return .{ e, false };
                 }
-                    std.log.debug("Reject because pool is full", .{});
+                std.log.debug("Reject because pool is full", .{});
                 return Error.PoolFull;
             }
             defer self.mutex.unlock();
             const new_available = available - 1;
             self.available = new_available;
-            std.log.debug("Re-use item {} -> {}", .{new_available, items[new_available]});
+            std.log.debug("Re-use item {} -> {}", .{ new_available, &items[new_available] });
             return .{ items[new_available], true };
         }
 
@@ -78,6 +78,7 @@ pub fn Pool(comptime E: type, comptime S: type) type {
             defer self.mutex.unlock();
 
             if (available < items.len) {
+                std.log.debug("Releasing item {} -> {}", .{ available, &e });
                 items[available] = e;
                 self.available = available + 1;
             }

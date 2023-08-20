@@ -60,12 +60,12 @@ pub const Request = struct {
     // Used for two reasons. First, we only lazily read the body.
     // Second, for keepalive, if the body wasn't read as part of the normal
     // request handling, we need to discard it from the stream.
-    bd_read: bool,
+    bd_read: bool = false,
     // The body of the request, if any.
-    bd: ?[]const u8,
+    bd: ?[]const u8 = null,
 
     // cannot use an optional on qs, because it's pre-allocated so always exists
-    qs_read: bool,
+    qs_read: bool = false,
     // The query string lookup.
     qs: KeyValue,
 
@@ -653,7 +653,6 @@ const Error = error{
     UnsupportedProtocol,
     InvalidHeaderLine,
     InvalidContentLength,
-    TooManyConnections,
 };
 
 test "atoi" {
