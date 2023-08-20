@@ -55,7 +55,7 @@ pub fn listen(comptime S: type, httpz_allocator: Allocator, app_allocator: Alloc
 }
 
 pub fn initReqResPool(httpz_allocator: Allocator, app_allocator: Allocator, config: Config) !ReqResPool {
-    return try ReqResPool.init(httpz_allocator, config.pool_size orelse 100, initReqRes, .{
+    return try ReqResPool.init(httpz_allocator, config.pool_size orelse 100, config.grow_pool, initReqRes, .{
         .config = config,
         .app_allocator = app_allocator,
         .httpz_allocator = httpz_allocator,
@@ -74,10 +74,14 @@ pub fn handleConnection(comptime S: type, server: S, conn: Conn, reqResPool: *Re
     };
     const reqResPair = reqResPairResult[0];
     const ok = reqResPairResult[1];
+    if (!ok) {
+        std.log.debug("Pool overflow, new reqReqPair allocated on heap {}", .{reqResPair});
+    }
     defer {
         if (ok) {
             reqResPool.release(reqResPair);
         } else {
+            std.log.debug("Free resReqPair {}", .{reqResPair});
             reqResPool.deinitResource(reqResPair);
         }
     }

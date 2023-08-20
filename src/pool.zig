@@ -3,6 +3,10 @@ const t = @import("t.zig");
 
 const Allocator = std.mem.Allocator;
 
+const Error = error{
+    PoolFull,
+};
+
 pub fn Pool(comptime E: type, comptime S: type) type {
     const initFnPtr = *const fn (S) anyerror!E;
 
@@ -13,10 +17,11 @@ pub fn Pool(comptime E: type, comptime S: type) type {
         initFn: initFnPtr,
         initState: S,
         mutex: std.Thread.Mutex,
+        grow_pool: bool = true,
 
         const Self = @This();
 
-        pub fn init(allocator: Allocator, size: usize, initFn: initFnPtr, initState: S) !Self {
+        pub fn init(allocator: Allocator, size: usize, grow_pool: bool, initFn: initFnPtr, initState: S) !Self {
             const items = try allocator.alloc(E, size);
 
             for (0..size) |i| {
@@ -29,6 +34,7 @@ pub fn Pool(comptime E: type, comptime S: type) type {
                 .initState = initState,
                 .available = size,
                 .allocator = allocator,
+                .grow_pool = grow_pool,
                 .mutex = .{},
             };
         }
@@ -47,6 +53,9 @@ pub fn Pool(comptime E: type, comptime S: type) type {
             const available = self.available;
             if (available == 0) {
                 self.mutex.unlock();
+                if (!self.grow_pool) {
+                    return Error.PoolFull;
+                }
                 const e = try self.initFn(self.initState);
                 return .{ e, false };
             }
