@@ -24,6 +24,8 @@ pub fn Pool(comptime E: type, comptime S: type) type {
         pub fn init(allocator: Allocator, size: usize, grow_pool: bool, initFn: initFnPtr, initState: S) !Self {
             const items = try allocator.alloc(E, size);
 
+            std.log.debug("Creating pool with size {} and grow = {}", .{ size, grow_pool });
+
             for (0..size) |i| {
                 items[i] = try initFn(initState);
             }
