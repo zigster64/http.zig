@@ -9,11 +9,13 @@ pub fn build(b: *std.Build) !void {
     const websocket_module = b.dependency("websocket", dep_opts).module("websocket");
 
     const httpz_module = b.addModule("httpz", .{
-        .root_source_file = b.path("src/httpz.zig"),
-        .imports = &.{
-            .{ .name = "metrics", .module = metrics_module },
-            .{ .name = "websocket", .module = websocket_module },
-        },
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/httpz.zig"),
+            .imports = &.{
+                .{ .name = "metrics", .module = metrics_module },
+                .{ .name = "websocket", .module = websocket_module },
+            },
+        }),
     });
     {
         const options = b.addOptions();
